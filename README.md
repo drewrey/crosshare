@@ -51,6 +51,11 @@ We use `yarn` for package management:
 $ sudo npm install --global yarn
 ```
 
+On MacOS you should install these dependencies of the `canvas` npm package:
+```shell
+$ brew install pkg-config cairo pango libpng jpeg giflib librsvg
+```
+
 Install dependencies:
 ```shell
 $ cd app
