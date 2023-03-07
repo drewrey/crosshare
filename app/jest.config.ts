@@ -10,6 +10,14 @@ const createJestConfig = nextJest({
 
 /** @type {import('jest').Config} */
 const customJestConfig = {
+  // TODO: this got me past the "Cannot use import statement outside of module" error
+  preset: "ts-jest",
+  testEnvironment: "node",
+  globals: {
+      'ts-jest': {
+          tsconfig: './tsconfig.json',
+      },
+  },
   moduleDirectories: ['node_modules', '<rootDir>/'],
   moduleNameMapper: {
     '^@firebase/auth$': require.resolve('@firebase/auth'),
@@ -18,9 +26,16 @@ const customJestConfig = {
     '^@firebase/storage$': require.resolve('@firebase/storage'),
     '^firebase/auth$': require.resolve('firebase/auth'),
     '^firebase/firestore$': require.resolve('firebase/firestore'),
-},
-    
-  testEnvironment: 'jest-environment-jsdom',
+  },
+  // transform: {
+  //   "./.+\\.(j|t)sx?$": "ts-jest"
+  // },
+  transformIgnorePatterns: [
+    '/node_modules/(?!(@firebase|firebase)/)',
+    './node_modules/(?!(@firebase|firebase)/)',
+    'node_modules/(?!@angular|@firebase|firebase|@ngrx)'
+  ],
+  // testEnvironment: 'jest-environment-jsdom', // TODO: trying to remove this to resolve "Cannot use import statement outside of module"
   "setupFilesAfterEnv": [
     "<rootDir>/setupTestsAfterEnv.ts"
   ],
