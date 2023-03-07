@@ -9,13 +9,18 @@ import { initializeApp } from 'firebase-admin/app';
 import { beforeAll, beforeEach } from '@jest/globals';
 import { Timestamp } from '../lib/timestamp';
 
+import { getCollection, getDoc, updateDoc } from '../lib/firebaseWrapper';
+
+// todo: move this to firebasewrapper?
+import { getDocs, getDoc as gD } from 'firebase/firestore';
+
 let play1: PlayT;
 let play2: LegacyPlayT;
 let play3: LegacyPlayT;
 
 const projectId = 'analyticstest';
 beforeAll(async () => {
-  setAdminApp(initializeApp({ projectId }, projectId));
+  initializeApp({ projectId }, projectId);
 });
 
 const thirtyAgo = new Date();
@@ -30,7 +35,7 @@ beforeEach(async () => {
   play1 = {
     c: 'mike',
     u: 'blah',
-    ua: AdminTimestamp.fromDate(twentyAgo),
+    ua: Timestamp.fromDate(twentyAgo),
     g: [],
     ct: [1, 2, 4, 100, 100].concat(new Array(20).fill(100)),
     uc: [5, 2].concat(new Array(23).fill(1)),
@@ -43,12 +48,12 @@ beforeEach(async () => {
     f: true,
     n: 'Puzzle title',
   };
-  await firestore().collection('p').doc('mike-blah').set(play1);
+  await updateDoc('p', 'mike-blah', play1);
 
   play2 = {
     c: 'mike',
     u: 'anonymous-user-id',
-    ua: AdminTimestamp.fromDate(thirtyAgo),
+    ua: Timestamp.fromDate(thirtyAgo),
     g: [],
     ct: [],
     uc: [],
@@ -60,7 +65,9 @@ beforeEach(async () => {
     ch: false,
     f: true,
   };
-  await firestore().collection('p').doc('mike-anonymous-user-id').set(play2);
+  // await firestore().collection('p').doc('mike-anonymous-user-id').set(play2);
+  // TODO: do we need to use merge: true here?
+  await updateDoc('p', 'mike-anonymous-user-id', play2);
   // Since play2 is a LegacyPlayT, getPlays() will look up the puzzle to get a title
   const puzzle: DBPuzzleT = {
     ct_ans: ['just A GUESS'],
@@ -82,7 +89,7 @@ beforeEach(async () => {
       'Middle Ages invader',
       'Has a great night at the comedy club',
     ],
-    p: AdminTimestamp.fromDate(new Date('6/10/2020')),
+    p: Timestamp.fromDate(new Date('6/10/2020')),
     a: 'fSEwJorvqOMK5UhNMHa4mu48izl1',
     an: [1, 6, 7, 8, 9],
     g: [
@@ -119,7 +126,7 @@ beforeEach(async () => {
         c: "A couple of two-worders today which I don't love, but I hope you all got it anyway!",
         i: 'LwgoVx0BAskM4wVJyoLj',
         t: 36.009,
-        p: AdminTimestamp.now(),
+        p: Timestamp.now(),
         a: 'fSEwJorvqOMK5UhNMHa4mu48izl1',
         n: 'Mike D',
         ch: false,
@@ -128,12 +135,12 @@ beforeEach(async () => {
     n: 'Mike D',
     pv: true,
   };
-  await firestore().collection('c').doc('mike').set(puzzle);
+  await updateDoc('c', 'mike', puzzle);
 
   play3 = {
     c: 'mike',
     u: 'other-user-id',
-    ua: AdminTimestamp.fromDate(twentyAgo),
+    ua: Timestamp.fromDate(twentyAgo),
     g: [],
     ct: [],
     uc: [],
@@ -145,7 +152,7 @@ beforeEach(async () => {
     ch: false,
     f: true,
   };
-  await firestore().collection('p').doc('mike-other-user-id').set(play3);
+  await updateDoc('c', 'mike-other-user-id', play3);
 });
 
 test('run for all time w/o initial state', async () => {
@@ -157,28 +164,36 @@ test('run for all time w/o initial state', async () => {
     Timestamp.fromDate(new Date())
   );
 
-  const res = await firestore().collection('ds').get();
+  const res = await getDocs(getCollection('ds'));
   expect(res.size).toEqual(1);
   // Can't snapshot updatedAt or playcount by hour
-  const { ua, h, ...toSnapshot } = res.docs[0]?.data() || {};
+  const { ua, h, ...toSnapshot } = res.docs[0]?.data() ?? {};
   expect(ua).not.toBeFalsy();
   expect(h.length).toEqual(24);
   expect(toSnapshot).toMatchSnapshot();
 
-  const pres = await firestore().collection('s').doc('mike').get();
-  const data = pres.data();
+  // const pres = await firestore().collection('s').doc('mike').get();
+  // TODO: change this back to the former semantics
+  const pres = await getDocs(getCollection('s'));
+  let data;
+  pres.forEach((doc) => {
+    console.log(doc.id, '=>', doc.data()); 
+    data = doc.data();
+  });
+
   if (data === undefined) {
     throw new Error('botch');
   }
-  const { ua: pua, sct, ...pToSnapshot } = data;
+  // TOOD: fix this
+  const { ua: pua, sct, ...pToSnapshot } = data as object;
   expect(pua).not.toBeFalsy();
   expect(sct).not.toBeFalsy();
   expect(pToSnapshot).toMatchSnapshot();
 
-  const cres = await firestore().collection('cs').get();
+  const cres = await getDocs(getCollection('cs'));
   expect(cres.size).toEqual(1);
   // Can't snapshot updatedAt or playcount by hour
-  const ctoSnapshot = cres.docs[0]?.data() || {};
+  const ctoSnapshot = cres.docs[0]?.data() ?? {};
   expect(ctoSnapshot).toMatchSnapshot();
   expect(cres.docs[0]?.id).toMatchSnapshot();
 });
@@ -187,39 +202,33 @@ test('run for all time w/ some meta submissions', async () => {
   const hourAgo = new Date();
   hourAgo.setMinutes(hourAgo.getMinutes() - 60);
 
-  await firestore()
-    .collection('p')
-    .doc('mike-other-user-id')
-    .update({
+  await updateDoc('p', 'mike-other-user-id', {
       ct_sub: 'my submission',
-      ct_t: AdminTimestamp.fromDate(twentyAgo),
+      ct_t: Timestamp.fromDate(twentyAgo),
       ct_n: 'Mike D',
-    });
+  });
 
-  await firestore()
-    .collection('p')
-    .doc('mike-blah')
-    .update({
+  await updateDoc('p', 'mike-blah', {
       ct_sub: 'just a guess',
       ct_em: 'foo@example.com',
-      ct_t: AdminTimestamp.fromDate(twentyAgo),
+      ct_t: Timestamp.fromDate(twentyAgo),
       ct_n: 'Blah',
-    });
+  });
 
   await runAnalytics(
     Timestamp.fromDate(hourAgo),
     Timestamp.fromDate(new Date())
   );
 
-  const res = await firestore().collection('ds').get();
+  const res = await getDocs(getCollection('ds'));
   expect(res.size).toEqual(1);
   // Can't snapshot updatedAt or playcount by hour
-  const { ua, h, ...toSnapshot } = res.docs[0]?.data() || {};
+  const { ua, h, ...toSnapshot } = res.docs[0]?.data() ?? {};
   expect(ua).not.toBeFalsy();
   expect(h.length).toEqual(24);
   expect(toSnapshot).toMatchSnapshot();
 
-  const pres = await firestore().collection('s').doc('mike').get();
+  const pres = await gD(getDoc('s', 'mike'));
   const data = pres.data();
   if (data === undefined) {
     throw new Error('botch');
@@ -233,7 +242,7 @@ test('run for all time w/ some meta submissions', async () => {
   });
   expect(pToSnapshot).toMatchSnapshot();
 
-  const puzres = await firestore().collection('c').doc('mike').get();
+  const puzres = await gD(getDoc('c', 'mike'));
   const puzdata = puzres.data();
   if (puzdata === undefined) {
     throw new Error('botch');
@@ -245,11 +254,11 @@ test('run for all time w/ some meta submissions', async () => {
   expect(puzdata.ct_subs).toMatchSnapshot();
 
   // Just run it again w/ new submission values:
-  await firestore().collection('p').doc('mike-other-user-id').update({
-    ct_sub: 'my submission 2',
+  // TODO: need to make this a merge
+  await updateDoc('c', 'mike-other-user-id', {
+    ct_sub: 'my submission 2'
   });
-
-  await firestore().collection('p').doc('mike-blah').update({
+  await updateDoc('p', 'mike-blah', {
     ct_sub: 'just a guess 2',
   });
   await runAnalytics(
@@ -257,7 +266,7 @@ test('run for all time w/ some meta submissions', async () => {
     Timestamp.fromDate(new Date())
   );
 
-  const pres1 = await firestore().collection('s').doc('mike').get();
+  const pres1 = await gD(getDoc('s', 'mike'));
   const data1 = pres1.data();
   if (data1 === undefined) {
     throw new Error('botch');
@@ -271,7 +280,7 @@ test('run for all time w/ some meta submissions', async () => {
   });
   expect(pToSnapshot1).toMatchSnapshot();
 
-  const puzres1 = await firestore().collection('c').doc('mike').get();
+  const puzres1 = await gD(getDoc('s', 'mike'));
   const puzdata1 = puzres1.data();
   if (puzdata1 === undefined) {
     throw new Error('botch');
@@ -282,21 +291,18 @@ test('run for all time w/ some meta submissions', async () => {
   });
   expect(puzdata1.ct_subs).toMatchSnapshot();
 
-  const cres = await firestore().collection('cs').get();
+  const cres = await getDocs(getCollection('cs'));
   expect(cres.size).toEqual(1);
   // Can't snapshot updatedAt or playcount by hour
-  const ctoSnapshot = cres.docs[0]?.data() || {};
+  const ctoSnapshot = cres.docs[0]?.data() ?? {};
   expect(ctoSnapshot).toMatchSnapshot();
   expect(cres.docs[0]?.id).toMatchSnapshot();
 
   // Now add one more correct, change one to correct, and add a reveal:
-  await firestore()
-    .collection('p')
-    .doc('mike-foo-bar')
-    .set({
+  const play3 = {
       c: 'mike',
       u: 'foo-bar',
-      ua: AdminTimestamp.fromDate(twentyAgo),
+      ua: Timestamp.fromDate(twentyAgo),
       g: [],
       ct: [],
       uc: [],
@@ -309,42 +315,41 @@ test('run for all time w/ some meta submissions', async () => {
       f: true,
       ct_sub: 'just a guess',
       ct_em: 'foobar@example.com',
-      ct_t: AdminTimestamp.fromDate(twentyAgo),
+      ct_t: Timestamp.fromDate(twentyAgo),
       ct_n: 'FOOBAR',
-    });
+};
 
-  await firestore().collection('p').doc('mike-blah').update({
-    ct_sub: 'just a guess',
-  });
+  await updateDoc('p', 'mike-foo-bar', play3);
 
-  await firestore()
-    .collection('p')
-    .doc('mike-i-revealed')
-    .set({
-      c: 'mike',
-      u: 'i-revealed',
-      ua: AdminTimestamp.fromDate(twentyAgo),
-      g: [],
-      ct: [],
-      uc: [],
-      vc: [],
-      wc: [],
-      we: [],
-      rc: [],
-      t: 44,
-      ch: false,
-      f: true,
-      ct_rv: true,
-      ct_t: AdminTimestamp.fromDate(twentyAgo),
-      ct_n: 'Revealing',
-    });
+  await updateDoc('p', 'mike-blah', {ct_sub: 'just a guess'});
+
+  const play4 = {
+    c: 'mike',
+    u: 'i-revealed',
+    ua: Timestamp.fromDate(twentyAgo),
+    g: [],
+    ct: [],
+    uc: [],
+    vc: [],
+    wc: [],
+    we: [],
+    rc: [],
+    t: 44,
+    ch: false,
+    f: true,
+    ct_rv: true,
+    ct_t: Timestamp.fromDate(twentyAgo),
+    ct_n: 'Revealing',
+  };
+
+  await updateDoc('p', 'mike-i-revealed', play4);
 
   await runAnalytics(
     Timestamp.fromDate(hourAgo),
     Timestamp.fromDate(new Date())
   );
 
-  const pres2 = await firestore().collection('s').doc('mike').get();
+  const pres2 = await gD(getDoc('s', 'mike'));
   const data2 = pres2.data();
   if (data2 === undefined) {
     throw new Error('botch');
@@ -358,7 +363,7 @@ test('run for all time w/ some meta submissions', async () => {
   });
   expect(pToSnapshot2).toMatchSnapshot();
 
-  const puzres2 = await firestore().collection('c').doc('mike').get();
+  const puzres2 = await gD(getDoc('s', 'mike'));
   const puzdata2 = puzres2.data();
   if (puzdata2 === undefined) {
     throw new Error('botch');
@@ -369,10 +374,10 @@ test('run for all time w/ some meta submissions', async () => {
   });
   expect(puzdata2.ct_subs).toMatchSnapshot();
 
-  const cres2 = await firestore().collection('cs').get();
+  const cres2 = await getDocs(getCollection('cs'));
   expect(cres2.size).toEqual(1);
   // Can't snapshot updatedAt or playcount by hour
-  const ctoSnapshot2 = cres2.docs[0]?.data() || {};
+  const ctoSnapshot2 = cres2.docs[0]?.data() ?? {};
   expect(ctoSnapshot2).toMatchSnapshot();
   expect(cres2.docs[0]?.id).toMatchSnapshot();
 });
@@ -386,15 +391,16 @@ test('run for more recent w/o initial state', async () => {
     Timestamp.fromDate(new Date())
   );
 
-  const res = await firestore().collection('ds').get();
+  // const res = await firestore().collection('ds').get();
+  const res = await getDocs(getCollection('ds'));
   expect(res.size).toEqual(1);
   // Can't snapshot updatedAt or playcount by hour
-  const { ua, h, ...toSnapshot } = res.docs[0]?.data() || {};
+  const { ua, h, ...toSnapshot } = res.docs[0]?.data() ?? {};
   expect(ua).not.toBeFalsy();
   expect(h.length).toEqual(24);
   expect(toSnapshot).toMatchSnapshot();
 
-  const pres = await firestore().collection('s').doc('mike').get();
+  const pres = await gD(getDoc('s', 'mike'));
   const data = pres.data();
   if (data === undefined) {
     throw new Error('botch');
@@ -419,15 +425,15 @@ test('run w/ initial state', async () => {
     Timestamp.fromDate(new Date())
   );
 
-  const res = await firestore().collection('ds').get();
+  const res = await getDocs(getCollection('ds'));
   expect(res.size).toEqual(1);
   // Can't snapshot updatedAt or playcount by hour
-  const { ua, h, ...toSnapshot } = res.docs[0]?.data() || {};
+  const { ua, h, ...toSnapshot } = res.docs[0]?.data() ?? {};
   expect(ua).not.toBeFalsy();
   expect(h.length).toEqual(24);
   expect(toSnapshot).toMatchSnapshot();
 
-  const pres = await firestore().collection('s').doc('mike').get();
+  const pres = await gD(getDoc('s', 'mike'));
   const data = pres.data();
   if (data === undefined) {
     throw new Error('botch');

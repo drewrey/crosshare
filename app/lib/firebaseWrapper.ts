@@ -7,6 +7,7 @@ import { getAuth as gA, signInAnonymously as sIA, User } from 'firebase/auth';
 import {
   collection,
   doc,
+  setDoc,
   DocumentData,
   Firestore,
   getFirestore,
@@ -37,6 +38,8 @@ if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR) {
 }
 
 export const getDocId = (collectionName: string) => doc(collection(db, collectionName)).id;
+export const getDoc = (collectionName: string, docName: string) => doc(db, collectionName, docName);
+export const updateDoc = (collectionName: string, docName: string, docData: DocumentData) => setDoc(getDoc(collectionName, docName), docData);
 
 export const getAuth = () => gA(App);
 export const getStorage = () => gS(App);
