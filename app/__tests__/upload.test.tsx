@@ -89,7 +89,8 @@ test('cannot upload if not logged in', async () => {
   sessionStorage.clear();
   localStorage.clear();
 
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
   await admin
     .firestore()
     .collection('donations')
@@ -112,7 +113,8 @@ test('upload a puzzle', async () => {
   sessionStorage.clear();
   localStorage.clear();
 
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
   await admin
     .firestore()
     .collection('donations')
@@ -187,7 +189,8 @@ test('upload after editing', async () => {
   sessionStorage.clear();
   localStorage.clear();
 
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
   await admin
     .firestore()
     .collection('donations')
@@ -246,7 +249,8 @@ test('upload a puzzle with duplicate entries', async () => {
   sessionStorage.clear();
   localStorage.clear();
 
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
   await admin
     .firestore()
     .collection('donations')

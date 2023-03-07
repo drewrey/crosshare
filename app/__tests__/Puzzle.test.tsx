@@ -295,7 +295,8 @@ test('nonuser progress should be cached in local storage but not db', async () =
   sessionStorage.clear();
   localStorage.clear();
   plays.resetMemoryStore();
-  await firebaseTesting.clearFirestoreData({ projectId: 'test1' });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId: 'test1' });
+  await testEnv.clearFirestore();
 
   const app = firebaseTesting.initializeTestApp({ projectId: 'test1' });
   setApp(app as firebase.app.App);
@@ -368,7 +369,8 @@ test('anonymous user progress should be cached in local storage and db', async (
   sessionStorage.clear();
   localStorage.clear();
   plays.resetMemoryStore();
-  await firebaseTesting.clearFirestoreData({ projectId: 'test1' });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId: 'test1' });
+  await testEnv.clearFirestore();
 
   const app = firebaseTesting.initializeTestApp({
     projectId: 'test1',
@@ -467,7 +469,8 @@ test('visiting a puzzle youve already solved should not write to db', async () =
   sessionStorage.clear();
   localStorage.clear();
   plays.resetMemoryStore();
-  await firebaseTesting.clearFirestoreData({ projectId: 'test1' });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId: 'test1' });
+  await testEnv.clearFirestore();
 
   const app = firebaseTesting.initializeTestApp({
     projectId: 'test1',
@@ -546,7 +549,8 @@ test('user finishing a puzzle causes write to db', async () => {
   sessionStorage.clear();
   localStorage.clear();
   plays.resetMemoryStore();
-  await firebaseTesting.clearFirestoreData({ projectId: 'test1' });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId: 'test1' });
+  await testEnv.clearFirestore();
 
   const app = firebaseTesting.initializeTestApp({
     projectId: 'test1',
@@ -602,7 +606,8 @@ test('nonuser finishing a puzzle should cause creation of anonymous user and wri
   sessionStorage.clear();
   localStorage.clear();
   plays.resetMemoryStore();
-  await firebaseTesting.clearFirestoreData({ projectId: 'test1' });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId: 'test1' });
+  await testEnv.clearFirestore();
 
   const anonApp = firebaseTesting.initializeTestApp({
     projectId: 'test1',
@@ -665,7 +670,8 @@ test('nonuser finishing a puzzle should cause creation of anonymous user and wri
 });
 
 test('puzzle redirects', async () => {
-  await firebaseTesting.clearFirestoreData({ projectId: 'test1' });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId: 'test1'});
+  await testEnv.clearFirestore();
   const admin = firebaseTesting.initializeAdminApp({ projectId: 'test1' });
   const puzId = 'testing';
   const puzTitle = 'Here is our 😁 title';
@@ -818,7 +824,8 @@ Object {
 });
 
 test('puzzle redirects with empty slug', async () => {
-  await firebaseTesting.clearFirestoreData({ projectId: 'test1' });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId: 'test1' });
+  await testEnv.clearFirestore();
   const admin = firebaseTesting.initializeAdminApp({ projectId: 'test1' });
   const puzId = 'testing';
   const puzTitle = '😁';

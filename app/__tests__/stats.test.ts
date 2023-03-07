@@ -39,7 +39,8 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
 
   await admin
     .firestore()

@@ -71,8 +71,9 @@ const projectId = 'edit-test';
 test('cannot edit if not correct user', async () => {
   sessionStorage.clear();
   localStorage.clear();
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
 
-  await firebaseTesting.clearFirestoreData({ projectId });
   await admin
     .firestore()
     .collection('c')
@@ -96,7 +97,8 @@ test('basic edit', async () => {
   sessionStorage.clear();
   localStorage.clear();
 
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
   await admin
     .firestore()
     .collection('c')
@@ -138,7 +140,8 @@ test('edit title', async () => {
   sessionStorage.clear();
   localStorage.clear();
 
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
   await admin
     .firestore()
     .collection('c')
@@ -181,7 +184,8 @@ test('edit constructor note', async () => {
   sessionStorage.clear();
   localStorage.clear();
 
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
   await admin
     .firestore()
     .collection('c')
@@ -232,7 +236,8 @@ test('edit blog post', async () => {
   sessionStorage.clear();
   localStorage.clear();
 
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
   await admin
     .firestore()
     .collection('c')
@@ -280,7 +285,8 @@ test('edit blog post', async () => {
 });
 
 test('security rules for puzzle edits', async () => {
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
   await admin
     .firestore()
     .collection('c')

@@ -15,7 +15,8 @@ beforeAll(() => {
   MockDate.set(new Date(Date.UTC(2020, 7, 2, 7)));
 });
 beforeEach(async () => {
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
 });
 afterAll(async () => {
   MockDate.reset();

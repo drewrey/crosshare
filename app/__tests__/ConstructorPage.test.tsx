@@ -22,7 +22,8 @@ jest.mock(
 const projectId = 'constructorpagetests';
 
 test('invalid constructor page', async () => {
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
   const adminApp = firebaseTesting.initializeAdminApp({
     projectId,
   }) as unknown as firebase.app.App;
@@ -36,7 +37,9 @@ test('invalid constructor page', async () => {
 test('create constructor page', async () => {
   const mike = getUser('mikeuserid', false);
 
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
+
   const adminApp = firebaseTesting.initializeAdminApp({
     projectId,
   }) as unknown as firebase.app.App;
@@ -119,7 +122,8 @@ test('create constructor page', async () => {
 });
 
 test('security rules for constructor page creation', async () => {
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
   const adminApp = firebaseTesting.initializeAdminApp({
     projectId,
   }) as unknown as firebase.app.App;
@@ -292,7 +296,8 @@ test('security rules for constructor page creation', async () => {
 });
 
 test('security rules for constructor page updates', async () => {
-  await firebaseTesting.clearFirestoreData({ projectId });
+  const testEnv = await firebaseTesting.initializeTestEnvironment({ projectId });
+  await testEnv.clearFirestore();
   const adminApp = firebaseTesting.initializeAdminApp({
     projectId,
   }) as unknown as firebase.app.App;
