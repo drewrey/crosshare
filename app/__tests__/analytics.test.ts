@@ -2,17 +2,18 @@
  * @jest-environment node
  */
 
-import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import { assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { PlayT, LegacyPlayT, DBPuzzleT } from '../lib/dbtypes';
 import { runAnalytics } from '../lib/analytics';
 import { initializeApp } from 'firebase-admin/app';
 import { beforeAll, beforeEach } from '@jest/globals';
 import { Timestamp } from '../lib/timestamp';
 
-import { getCollection, getDoc, updateDoc } from '../lib/firebaseWrapper';
+// import { getCollection, getDoc, updateDoc, setDB } from '../lib/firebaseWrapper';
 
 // todo: move this to firebasewrapper?
-import { getDocs, getDoc as gD } from 'firebase/firestore';
+import { getDocs, getDoc as gD, setDoc, doc } from 'firebase/firestore';
+import { fst } from 'fp-ts/lib/ReadonlyTuple';
 
 let play1: PlayT;
 let play2: LegacyPlayT;
@@ -29,8 +30,14 @@ const twentyAgo = new Date();
 twentyAgo.setMinutes(twentyAgo.getMinutes() - 20);
 
 beforeEach(async () => {
-  const testEnv = await initializeTestEnvironment({ projectId });
+  let testEnv = await initializeTestEnvironment({ projectId });
   await testEnv.clearFirestore();
+
+  // TODO: do we need to do this after clearingfirestore?
+  testEnv = await initializeTestEnvironment({ projectId });
+
+  const authedContext = testEnv.authenticatedContext('mike', {});
+
 
   play1 = {
     c: 'mike',
@@ -48,114 +55,120 @@ beforeEach(async () => {
     f: true,
     n: 'Puzzle title',
   };
-  await updateDoc('p', 'mike-blah', play1);
+  // await updateDoc('p', 'mike-blah', play1);
 
-  play2 = {
-    c: 'mike',
-    u: 'anonymous-user-id',
-    ua: Timestamp.fromDate(thirtyAgo),
-    g: [],
-    ct: [],
-    uc: [],
-    vc: [],
-    wc: [],
-    we: [],
-    rc: [],
-    t: 44,
-    ch: false,
-    f: true,
-  };
-  // await firestore().collection('p').doc('mike-anonymous-user-id').set(play2);
-  // TODO: do we need to use merge: true here?
-  await updateDoc('p', 'mike-anonymous-user-id', play2);
-  // Since play2 is a LegacyPlayT, getPlays() will look up the puzzle to get a title
-  const puzzle: DBPuzzleT = {
-    ct_ans: ['just A GUESS'],
-    c: null,
-    m: true,
-    t: 'Raises, as young',
-    dn: [1, 2, 3, 4, 5],
-    ac: [
-      " Cobbler's forms",
-      'Absolutely perfect',
-      'Spike Lee\'s "She\'s ___ Have It"',
-      'English class assignment',
-      'Raises, as young',
-    ],
-    dc: [
-      'Hybrid whose father is a lion',
-      '___ of reality (wake-up call)',
-      '___ date (makes wedding plans)',
-      'Middle Ages invader',
-      'Has a great night at the comedy club',
-    ],
-    p: Timestamp.fromDate(new Date('6/10/2020')),
-    a: 'fSEwJorvqOMK5UhNMHa4mu48izl1',
-    an: [1, 6, 7, 8, 9],
-    g: [
-      'L',
-      'A',
-      'S',
-      'T',
-      'S',
-      'I',
-      'D',
-      'E',
-      'A',
-      'L',
-      'G',
-      'O',
-      'T',
-      'T',
-      'A',
-      'E',
-      'S',
-      'S',
-      'A',
-      'Y',
-      'R',
-      'E',
-      'A',
-      'R',
-      'S',
-    ],
-    h: 5,
-    w: 5,
-    cs: [
-      {
-        c: "A couple of two-worders today which I don't love, but I hope you all got it anyway!",
-        i: 'LwgoVx0BAskM4wVJyoLj',
-        t: 36.009,
-        p: Timestamp.now(),
-        a: 'fSEwJorvqOMK5UhNMHa4mu48izl1',
-        n: 'Mike D',
-        ch: false,
-      },
-    ],
-    n: 'Mike D',
-    pv: true,
-  };
-  await updateDoc('c', 'mike', puzzle);
+  console.log('hello');
 
-  play3 = {
-    c: 'mike',
-    u: 'other-user-id',
-    ua: Timestamp.fromDate(twentyAgo),
-    g: [],
-    ct: [],
-    uc: [],
-    vc: [],
-    wc: [],
-    we: [],
-    rc: [],
-    t: 44,
-    ch: false,
-    f: true,
-  };
-  await updateDoc('c', 'mike-other-user-id', play3);
+  assertSucceeds(setDoc(doc(authedContext.firestore(), 'p', 'mike-blah'), play1));
+
+  console.log('after');
+
+  // play2 = {
+  //   c: 'mike',
+  //   u: 'anonymous-user-id',
+  //   ua: Timestamp.fromDate(thirtyAgo),
+  //   g: [],
+  //   ct: [],
+  //   uc: [],
+  //   vc: [],
+  //   wc: [],
+  //   we: [],
+  //   rc: [],
+  //   t: 44,
+  //   ch: false,
+  //   f: true,
+  // };
+  // // await firestore().collection('p').doc('mike-anonymous-user-id').set(play2);
+  // // TODO: do we need to use merge: true here?
+  // await updateDoc('p', 'mike-anonymous-user-id', play2);
+  // // Since play2 is a LegacyPlayT, getPlays() will look up the puzzle to get a title
+  // const puzzle: DBPuzzleT = {
+  //   ct_ans: ['just A GUESS'],
+  //   c: null,
+  //   m: true,
+  //   t: 'Raises, as young',
+  //   dn: [1, 2, 3, 4, 5],
+  //   ac: [
+  //     " Cobbler's forms",
+  //     'Absolutely perfect',
+  //     'Spike Lee\'s "She\'s ___ Have It"',
+  //     'English class assignment',
+  //     'Raises, as young',
+  //   ],
+  //   dc: [
+  //     'Hybrid whose father is a lion',
+  //     '___ of reality (wake-up call)',
+  //     '___ date (makes wedding plans)',
+  //     'Middle Ages invader',
+  //     'Has a great night at the comedy club',
+  //   ],
+  //   p: Timestamp.fromDate(new Date('6/10/2020')),
+  //   a: 'fSEwJorvqOMK5UhNMHa4mu48izl1',
+  //   an: [1, 6, 7, 8, 9],
+  //   g: [
+  //     'L',
+  //     'A',
+  //     'S',
+  //     'T',
+  //     'S',
+  //     'I',
+  //     'D',
+  //     'E',
+  //     'A',
+  //     'L',
+  //     'G',
+  //     'O',
+  //     'T',
+  //     'T',
+  //     'A',
+  //     'E',
+  //     'S',
+  //     'S',
+  //     'A',
+  //     'Y',
+  //     'R',
+  //     'E',
+  //     'A',
+  //     'R',
+  //     'S',
+  //   ],
+  //   h: 5,
+  //   w: 5,
+  //   cs: [
+  //     {
+  //       c: "A couple of two-worders today which I don't love, but I hope you all got it anyway!",
+  //       i: 'LwgoVx0BAskM4wVJyoLj',
+  //       t: 36.009,
+  //       p: Timestamp.now(),
+  //       a: 'fSEwJorvqOMK5UhNMHa4mu48izl1',
+  //       n: 'Mike D',
+  //       ch: false,
+  //     },
+  //   ],
+  //   n: 'Mike D',
+  //   pv: true,
+  // };
+  // await updateDoc('c', 'mike', puzzle);
+
+  // play3 = {
+  //   c: 'mike',
+  //   u: 'other-user-id',
+  //   ua: Timestamp.fromDate(twentyAgo),
+  //   g: [],
+  //   ct: [],
+  //   uc: [],
+  //   vc: [],
+  //   wc: [],
+  //   we: [],
+  //   rc: [],
+  //   t: 44,
+  //   ch: false,
+  //   f: true,
+  // };
+  // await updateDoc('c', 'mike-other-user-id', play3);
 });
 
-test('run for all time w/o initial state', async () => {
+test.only('run for all time w/o initial state', async () => {
   const hourAgo = new Date();
   hourAgo.setMinutes(hourAgo.getMinutes() - 60);
 

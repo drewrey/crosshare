@@ -1,17 +1,21 @@
 import { assertFails, assertSucceeds, initializeTestEnvironment, RulesTestEnvironment, RulesTestContext } from '@firebase/rules-unit-testing';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
-const projectId = 'statstest';
+// TODO: was seeing some error in the firestore-debug.log about this being set differently to what was in .firebaserc
+// const projectId = 'statstest';
 
 let testEnv: RulesTestEnvironment;
 let authedContext: RulesTestContext;
 let randomContext: RulesTestContext;
 
 beforeAll(async () => {
-  testEnv = await initializeTestEnvironment({ projectId });
+  // Looks like they recommend naming this demo-* so that it will error when trying to connect to real resources:
+  // https://firebase.google.com/docs/emulator-suite/connect_firestore#choose_a_firebase_project
+  testEnv = await initializeTestEnvironment({projectId: 'demo-statstest'});
 
   authedContext = testEnv.authenticatedContext('mike');
   randomContext = testEnv.unauthenticatedContext();
+
 
 });
 
